@@ -1,0 +1,202 @@
+Blue Brain InsilicoVSDI
+=======================
+Insilico Voltage Sensitive Dye Imaging. A software library for calculating voltage-sensitive dye
+imaging (VSDI) signals from Blue Brain simulation data.
+
+Voltage-sensitive dyes are a family of fluorescent molecules whose fluorescence intensity and/or
+peak absorption/emission spectra change as a function of voltage. When applied to neural tissue,
+they stain the surface of cell membranes, and offer a means of visualizing membrane potential
+fluctuations in populations of neurons.
+
+This software attempts to replicate the physics of *in vivo* voltage-sensitive dye imaging, using
+Blue Brain circuits and simulation data as input. In summary, the pipeline proceeds as follows:
+
+1. Simulations are carried out on a Blue Brain circuit.
+2. The transmembrane voltage in each neural compartment in the circuit is multiplied by the surface
+   area of that compartment.
+3. Raw data from the previous step is scaled in a depth-dependent manner to account for the physics
+   of excitation light entering the tissue, and emitted light exiting the tissue and passing
+   through an optical setup.
+4. Vertical columns of scaled data are summated to produce a single 2D array (image) for each
+   timestep.
+5. The stack of images is stitched together and normalized by the average of the first several
+   frames to produce a VSDI movie.
+
+Citation
+--------
+
+When you use the InsilicoVSDI software or method for your research, we ask you to cite the
+following publication:
+`Taylor H. Newton, Marwan Abdellah, Grigori Chevtchenko, Eilif B. Muller, Henry Markram (2019).
+Voltage-sensitive dye imaging reveals inhibitory modulation of ongoing cortical activity.
+doi: 10.1101/812008 <https://www.biorxiv.org/content/10.1101/812008v2>`__.
+
+.. code:: tex
+
+    @article{Newton2019,
+      doi = {10.1101/812008},
+      url = {https://doi.org/10.1101/812008},
+      year = {2019},
+      month = oct,
+      publisher = {Cold Spring Harbor Laboratory},
+      author = {Taylor H. Newton and Marwan Abdellah and Grigori Chevtchenko and Eilif B. Muller and Henry Markram},
+      title = {Voltage-sensitive dye imaging reveals inhibitory modulation of ongoing cortical activity}
+    }
+
+
+Installation
+------------
+Prerequisites
+~~~~~~~~~~~~~
+For `app` package you must have `EMSim <https://github.com/BlueBrain/EMSim>`__ and
+`ffmpeg <https://ffmpeg.org/>`__ installed. For `depth_point_spread` package you must have
+`pbrt-v2 <https://github.com/BlueBrain/pbrt-v2/>`__ installed. More on these packages below. To
+install the project:
+
+.. code:: bash
+
+    pip install insilico-vsdi
+
+
+Usage
+-----
+
+There are 2 packages provided: `app` and `depth_point_spread`. The first represents the main
+pipeline as defined in the introduction. The latter is auxiliary, and is used to calculate a
+depth-dependent "point-spread function" (PSF), which are used for the main pipeline. For further
+details refer to the package's documentation.
+A json config file is a required argument to run the main pipeline `app`. An example config file is
+provided below, with descriptions of each input value field. For a concrete example of such file see
+:file:`examples/sample_vsdi_config.json`.
+
+.. code:: javascript
+
+    {
+        // parameters for emsim-vsd
+        "emsim-vsd-args": {
+            "target": "string, Name of the simulated circuit target",
+            "report-voltage": "string, Name of the voltage report in the BlueConfig",
+            "report-area": "string, Name of the area report in the BlueConfig",
+            "sensor-res": int, Number of pixels per side of the square sensor,
+            "sensor-dim": float, Length of side of the square sensor in micrometers,
+            "curve": "string or null, path to a depth-dependent dye attenuation curve file. If null
+                      then `insilico_vsdi/data/RH1691-cortical-penetration-mouse.txt` is used",
+            "start-time": float, Start time of the simulation in milliseconds,
+            "end-time": float, End time of the simulation in milliseconds,
+            "time-step": float, Time step between frames in milliseconds,
+            "fraction": float, The fraction [0.0 1.0] of gids to be used,
+            "export-volume": bool, Will export a floating point volume for each time steps.,
+            "depth": float, Depth of the attenuation curve in micrometers. Applied from y=0
+                    (circuit bottom) to specified height. Default: 2081.756 micrometers,
+            "interpolate-attenuation": bool, Will interpolate the attenuation curve,
+            "sigma": float, Effective modified Beer-Lambert law extinction coefficient (inverse of
+                    mean photon path length between scattering events, inverse meters). Must be a
+                    positive value (default: 0.0015),
+            "v0": float, Mean resting potential (default: -65 mV),
+            "g0": float, Autofluorescence and noise calibration scale factor
+                  (default: 250, unit-less),
+            "ap-threshold": float, Membrane potential value above which to threshold compartment
+                    voltage signals. Useful for excluding spiking activity from analysis.
+                    Default: 3.40282347e+38 (effectively infinite, thus no thresholding applied),
+            "soma-pixels": bool, Produce a text file containing the GIDs loaded and their
+                  corresponding 3D positions and indices in the resulting 2D image
+        },
+        "movie-args": {
+            "zstart": float, Simulation time at which to begin collecting baseline images for
+                normalization (normalizing frame computed as average over frames between zstart
+                and zfinish),
+            "zfinish": float, Simulation time at which to stop collecting baseline images for
+                normalization (normalizing frame computed as average over frames between zstart
+                and zfinish),
+            "norm-special": "string or null, Path to a file containing a pre-calculated normalizing
+                frame with which to produce the movie. If null then this frame is computed using
+                the images between zstart and zfinish (default: null)"
+            "point-spread-blur": "string, path to a file that contains PSF. This file can be
+            generated by `depth_point_spread`."
+        },
+        "simulations": [
+            {
+                "input": "string, Path to a BlueConfig file for the simulation (step 1 in the
+                    introduction)",
+                "frames-output": "string, Path to file which will store calculated arrays of 2D
+                    image data (step 4). Also raw volumetric data (step 3) is stored in its folder",
+                "movie-output": "string, Path to file which will store movies (step 5) generated
+                    from the arrays of 2D images calculated in step 4"
+            },
+            You can specify another simulation easily, and process multiple simulations at once.
+            {
+                "input": "...",
+                "frames-output": "...",
+                "movie-output": "..."
+            }
+        ]
+    }
+
+Once a properly formatted config file is supplied, the pipeline is ready to be run. The
+`--skip-existing` flag bypasses the generation of output files, which is useful for resuming the
+pipeline without overwriting previous outputs in case of failure.
+
+.. code:: bash
+
+    insilico-vsdi main --config your.config.json
+    # or
+    insilico-vsdi main --config your.config.json --skip-existing
+
+The same in Python would be:
+
+.. code:: python
+
+    from insilico_vsdi.app.__main__ import main
+    main('your.config.json')
+    # or
+    main('your.config.json', True)
+
+
+Running `depth_point_spread` also requires specification of `um_px (length of voxel side in
+microns), `kernel_dir` (path to results of Monte Carlo simulations of photon propagation using
+PBRT-v2), and `output` (file where point spread function (PSF) standard deviations (sigmas) will be
+stored). For each output file in the `output` directory, a second file with the suffix `_raw` will
+also be stored for debugging purposes. The PSF files generated in `output` may subsequently be used
+as inputs for the argument `["movie-args"]["point-spread-blur"]` in the config file for the main
+pipeline.
+
+.. code:: bash
+
+    insilico-vsdi --um_px=10.0283 generate-psf --kernel_dir path/to/kernel_dir --config your.config.json --output path/to/save/psf/sigmas.npy
+
+The same in Python
+
+.. code:: python
+
+    from insilico_vsdi.depth_point_spread import psf
+    psf.calculate_and_save(10.0283, 'path/to/kernel_dir', 'your.config.json', 'path/to/save/psf/sigmas.npy')
+
+
+Acknowledgements
+----------------
+This project is the result of research carried out by Taylor H. Newton in service of the PhD thesis
+"In Silico Voltage-Sensitive Dye Imaging: A Model-Based Approach for Bridging Scales of Cortical
+Activity".
+
+
+License
+-------
+
+Blue Brain InsilicoVSDI is licensed under the terms of the GNU Lesser General Public License
+version 3, unless noted otherwise, for example, external dependencies.
+Refer to `COPYING.LESSER <https://github.com/BlueBrain/insilico-vsdi/blob/master/COPYING.LESSER>`__
+and `COPYING <https://github.com/BlueBrain/insilico-vsdi/blob/master/COPYING>`__ for details.
+
+Copyright (C) 2017-2020, Blue Brain Project/EPFL and contributors.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License version 3
+as published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.

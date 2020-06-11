@@ -1,0 +1,35 @@
+{
+  "emsim-vsd-args": {
+                "target": "mc2_Column",
+                "report-voltage": "voltage",
+                "report-area": "area",
+                "sensor-res": 100,
+                "sensor-dim": 1000,
+                "curve": null,
+                "start-time": 1500.0,
+                "end-time": 2500.0,
+                "time-step": 0.5,
+                "fraction": 1.0,
+                "export-volume": true,
+                "depth": 2081.7561,
+                "interpolate-attenuation": true,
+                "sigma": 0.0015,
+                "v0": -65.0,
+                "g0": 250,
+                "ap-threshold": 3.40282347e+38,
+                "soma-pixels": true
+      },
+  "movie-args": {
+              "zstart": 950.0,
+              "zfinish": 1000.0,
+              "norm-special": null,
+              "point-spread-blur": "/path/to/sigmas_fit_latest.npy"
+      },
+  "simulations": [
+    {
+      "input": "/path/to/BlueConfig",
+      "frames-output": "/path/to/frames-output/frame",
+      "movie-output": "/path/to/movie-output/vsd"
+    }
+  ]
+}
