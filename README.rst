@@ -69,7 +69,7 @@ A json config file is a required argument to run the main pipeline `app`. An exa
 provided below, with descriptions of each input value field. For a concrete example of such file see
 :file:`examples/sample_vsdi_config.json`.
 
-.. code:: json
+.. code:: javascript
 
     {
         // parameters for emsim-vsd
