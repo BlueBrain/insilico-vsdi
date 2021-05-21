@@ -176,6 +176,9 @@ The same in Python
 
 Acknowledgements
 ----------------
+
+The development of this software was supported by funding to the Blue Brain Project, a research center of the École polytechnique fédérale de Lausanne (EPFL), from the Swiss government’s ETH Board of the Swiss Federal Institutes of Technology.
+
 This project is the result of research carried out by Taylor H. Newton in service of the PhD thesis
 "In Silico Voltage-Sensitive Dye Imaging: A Model-Based Approach for Bridging Scales of Cortical
 Activity".
@@ -184,12 +187,12 @@ Activity".
 License
 -------
 
+Copyright (c) 2017-2021 Blue Brain Project/EPFL
+
 Blue Brain InsilicoVSDI is licensed under the terms of the GNU Lesser General Public License
 version 3, unless noted otherwise, for example, external dependencies.
 Refer to `COPYING.LESSER <https://github.com/BlueBrain/insilico-vsdi/blob/master/COPYING.LESSER>`__
 and `COPYING <https://github.com/BlueBrain/insilico-vsdi/blob/master/COPYING>`__ for details.
-
-Copyright (C) 2017-2020, Blue Brain Project/EPFL and contributors.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License version 3
