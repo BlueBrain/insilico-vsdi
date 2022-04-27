@@ -187,7 +187,7 @@ Activity".
 License
 -------
 
-Copyright (c) 2017-2021 Blue Brain Project/EPFL
+Copyright (c) 2017-2022 Blue Brain Project/EPFL
 
 Blue Brain InsilicoVSDI is licensed under the terms of the GNU Lesser General Public License
 version 3, unless noted otherwise, for example, external dependencies.
